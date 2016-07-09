@@ -1,3 +1,18 @@
+def archiveOdds(Sport, Agency, df):
+
+	import sqlite3
+	import pandas as pd
+
+	if Agency == "Pinnacle":
+		table = "odds_pinnacle"
+	else:
+		table = "odds_betfair"
+
+	con = sqlite3.connect('DB')
+	df.to_sql(table,con,if_exists = "append")
+	con.close()
+
+
 def getOdds(Sport, Agency, uid, pword, Archive = False):
 
 	import pandas as pd
@@ -28,7 +43,7 @@ def getOdds(Sport, Agency, uid, pword, Archive = False):
 		# Are we archiving data to the SQLite DB?   OR
 		# Are we returning the data to perform calcs in memory?
 		if Archive:
-			archiveOdds(Sport, Agency)
+			archiveOdds(Sport, Agency, pyDF)
 		else:
 			return pyDF 
 
@@ -39,14 +54,14 @@ def getOdds(Sport, Agency, uid, pword, Archive = False):
 
 		# Same as above
 		if Archive:
-			archiveOdds(Sport, Agency)
+			archiveOdds(Sport, Agency, pyDF)
 		else:
 			return pyDF 
 
 
 test = getOdds("Soccer","Pinnacle","TB882982", "Stanimal3#")
 
-print test
+print test.dtypes
 
 def placePinnacleBet(LeagueID, Period):
 	print 'test'
