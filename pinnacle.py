@@ -1,6 +1,6 @@
 getOdds = '''
 
-function(uid, pword, sport) {
+function(sport, user) {
 
 	require(pinnacle.API)
 	require(plyr)
@@ -9,7 +9,7 @@ function(uid, pword, sport) {
 	require(assertthat)
 
 	AcceptTermsAndConditions(TRUE)
-	SetCredentials(uid,pword)
+	if (user == "Tom") {SetCredentials("TB882982","Stanimal3#")}
 
 	assert_that(sport == "Soccer")
 

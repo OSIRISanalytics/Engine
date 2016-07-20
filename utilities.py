@@ -13,7 +13,7 @@ def archiveOdds(Sport, Agency, df):
 	con.close()
 
 
-def getOdds(Sport, Agency, uid, pword, Archive = False):
+def getOdds(Sport, Agency, User = "Tom", Archive = False):
 
 	import pandas as pd
 	import params
@@ -35,7 +35,7 @@ def getOdds(Sport, Agency, uid, pword, Archive = False):
 		getPinnacle = robjects.r(pinnacle.getOdds)
 
 		# Extract Odds from Pinnacle API
-		rDF = getPinnacle(uid, pword, Sport)
+		rDF = getPinnacle(Sport, User)
 
 		# Convert r dataframe object to a pandas python dataframe
 		pyDF = pandas2ri.ri2py(rDF)
@@ -50,7 +50,7 @@ def getOdds(Sport, Agency, uid, pword, Archive = False):
 	else:
 
 		# Extract Odds from Betfair API
-		pyDF = pyFunc(Sport)
+		pyDF = betfair.getOdds(Sport,User)
 
 		# Same as above
 		if Archive:
@@ -59,9 +59,9 @@ def getOdds(Sport, Agency, uid, pword, Archive = False):
 			return pyDF 
 
 
-test = getOdds("Soccer","Pinnacle","TB882982", "Stanimal3#")
+#test = getOdds("Soccer","Pinnacle",)
 
-print test.dtypes
+#print test.dtypes
 
 def placePinnacleBet(LeagueID, Period):
 	print 'test'

@@ -1,131 +1,100 @@
-#!/usr/bin/env python
 
-import urllib2
-import json
-import datetime
-import sys
+def getOdds(Sport,User = "Tom",Market = 'MATCH_ODDS'):
 
+    import pandas as pd
+    import login
+    from time import gmtime, strftime
+    from betfair import utils
+    from betfair import models
+    from betfair import exceptions
+    from betfair.models import MarketFilter
+    from betfair.models import PriceProjection
+    from betfair.models import ExBestOffersOverrides
+    from betfair.models import MarketData
 
-"""
-make a call API-NG
-"""
-
-def callAping(jsonrpc_req):
-    try:
-        req = urllib2.Request(url, jsonrpc_req, headers)
-        response = urllib2.urlopen(req)
-        jsonResponse = response.read()
-        return jsonResponse
-    except urllib2.URLError:
-        print 'Oops no service available at ' + str(url)
-        exit()
-    except urllib2.HTTPError:
-        print 'Oops not a valid operation from the service ' + str(url)
-        exit()
-
-
-"""
-calling getEventTypes operation
-"""
-
-def getEventTypes():
-    event_type_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listEventTypes", "params": {"filter":{ }}, "id": 1}'
-    """print 'Calling listEventTypes to get event Type ID'"""
-    eventTypesResponse = callAping(event_type_req)
-    eventTypeLoads = json.loads(eventTypesResponse)
-    """
-    print eventTypeLoads
-    """
-
-    try:
-        eventTypeResults = eventTypeLoads['result']
-        return eventTypeResults
-    except:
-        print 'Exception from API-NG' + str(eventTypeLoads['error'])
-        exit()
-
-
-"""
-Extraction eventypeId for eventTypeName from evetypeResults
-"""
-
-def getEventTypeIDForEventTypeName(eventTypesResult, requestedEventTypeName):
-    if(eventTypesResult is not None):
-        for event in eventTypesResult:
-            eventTypeName = event['eventType']['name']
-            if( eventTypeName == requestedEventTypeName):
-                return  event['eventType']['id']
+    if User == "Tom":
+        #Tom
+        client = login.login('Np2HwoLYyAQk2X6s', 'tombish22','parksandrec19')
     else:
-        print 'Oops there is an issue with the input'
-        exit()
+        # Cal
+        client = login.login('eTnX7n6jsiaoGA9g', 'calhamd@gmail.com','wyeslsc10')
+
+    # Grab the sports that match the string provided as an argument
+    event_types = client.list_event_types(MarketFilter(text_query=Sport))
+
+    # Grab the ID of the requested sport
+    sport_id = event_types[0].event_type.id
+
+    # Pull the event details data for the sport and market specified as an argument
+    betting_markets = client.list_market_catalogue(MarketFilter(event_type_ids=[sport_id], market_type_codes=[Market]), market_projection =  ['COMPETITION','EVENT','EVENT_TYPE','RUNNER_DESCRIPTION','MARKET_START_TIME'])
+
+    # #Gets the list of market IDs in the Betting Market
+    sports_market_ids = []
+    for eachMarket in betting_markets:
+        sports_market_ids = sports_market_ids + [eachMarket.market_id]
+
+    # #Get the MarketBookResults
+    maxpullsize = 100
+    index=0
+    # print len(sports_market_ids)
+    marketbook_result = []
+    while index+maxpullsize < len(sports_market_ids):
+        marketbook_result = marketbook_result + client.list_market_book([sports_market_ids[index:index+maxpullsize]],PriceProjection(price_data=['EX_BEST_OFFERS'],exBestOffersOverrides=ExBestOffersOverrides(best_prices_depth=1)))
+        index=index+maxpullsize
+    marketbook_result = marketbook_result + client.list_market_book([sports_market_ids[index:len(sports_market_ids)]],PriceProjection(price_data=['EX_BEST_OFFERS'],exBestOffersOverrides=ExBestOffersOverrides(best_prices_depth=1)))  
 
 
-"""
-Calling marketCatalouge to get marketDetails
-"""
-
-def getMarketCatalogue(eventTypeID):
-    if (eventTypeID is not None):
-        """print 'Calling listMarketCatalouge Operation to get MarketID and selectionId'"""
-        now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-        market_catalogue_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"],"competitionIds":["4527196"],"marketTypeCodes":["MATCH_ODDS"]},"sort":"FIRST_TO_START","maxResults":"100","marketProjection":["RUNNER_DESCRIPTION"]}, "id": 1}'
-        """
-        print  market_catalogue_req
-        """
-        market_catalogue_response = callAping(market_catalogue_req)
-        """
-        print market_catalogue_response
-        """
-        market_catalouge_loads = json.loads(market_catalogue_response)
-        try:
-            market_catalouge_results = market_catalouge_loads['result']
-            """print market_catalouge_results	"""
-            return market_catalouge_results
-        except:
-            print  'Exception from API-NG' + str(market_catalouge_results['error'])
-            exit()
+    print 'Compiling Dataset'
+    market_data = []
+    for market in betting_markets:
+        next_market_data = MarketData(market,next((x for x in marketbook_result if x.market_id == market.market_id), None))
+        market_data.append(next_market_data)
 
 
-def getMarketId(marketCatalogueResult):
-    if( marketCatalogueResult is not None):
-        for market in marketCatalogueResult:
-			return market['marketId']
+    print 'Creating individual runner data'
+    runner_data = []
+    for mindex, market in enumerate(market_data):
+        for rindex, runner in enumerate(market.runners):
+            runner_to_add = {'market_id': market.market_id, 
+                                'market_name': market.market_name, 
+                                'market_start_time': market.market_start_time,
+                                #'total_matched':market.total_matched,
+                                #'active_runners':market.number_of_active_runners,
+                                'status':market.status,
+                                #'total_available':market.total_available,
+                                #'total_matched':market.total_matched,
+                                #'selection_id':market.runner_catalog[rindex].selection_id,
+                                'runner_name':market.runner_catalog[rindex].runner_name,
+                                'price_selection_id':runner.selection_id,
+                                'runner_status':runner.status
+                                }
+            
+            if len(runner.ex.available_to_back)>0:
+                runner_to_add.update({                         
+                                'available_to_back_price':runner.ex.available_to_back[0].price,
+                                'available_to_back_market':runner.ex.available_to_back[0].size
+                                })
+            if len(runner.ex.available_to_lay)>0:
+                runner_to_add.update({                         
+                                'available_to_lay_price':runner.ex.available_to_lay[0].price,
+                                'available_to_lay_market':runner.ex.available_to_lay[0].size
+                                })
+            runner_data.append(runner_to_add)
 
 
-def getSelectionId(marketCatalogueResult):
-    if(marketCatalogueResult is not None):
-        for market in marketCatalogueResult:
-            return market['runners'][0]['selectionId']
+    MarketDf = pd.DataFrame(runner_data)
+
+    # Drop incomplete rows
+    RetDF = MarketDf[MarketDf.status == "OPEN"]
+    #RetDF = MarketDf[(MarketDf.status == "OPEN") & (MarketDf.market_start_time - strftime("%Y-%m-%d %H:%M:%S", gmtime()).days < 2)]
+    print RetDf.dtypes
+    # return MarketDF        
+
+#     #client.logout()
 
 
-def getMarketBookBestOffers(marketId):
-    """print 'Calling listMarketBook to read prices for the Market with ID :' + marketId"""
-    market_book_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketBook", "params": {"marketIds":["' + marketId + '"],"priceProjection":{"priceData":["EX_BEST_OFFERS"]}}, "id": 1}'
-    """
-    print  market_book_req
-    """
-    market_book_response = callAping(market_book_req)
-    """
-    print market_book_response
-    """
-    market_book_loads = json.loads(market_book_response)
-    try:
-        market_book_result = market_book_loads['result']
-        return market_book_result
-    except:
-        print  'Exception from API-NG' + str(market_book_result['error'])
-        exit()
+def placeBet(details):
 
+    print "This function hasn't been built yet"
 
-def printPriceInfo(market_book_result):
-    if(market_book_result is not None):
-        print 'Please find Best three available prices for the runners'
-        for marketBook in market_book_result:
-            runners = marketBook['runners']
-            for runner in runners:
-                print 'Selection id is ' + str(runner['selectionId'])
-                if (runner['status'] == 'ACTIVE'):
-                    print 'Available to back price :' + str(runner['ex']['availableToBack'][0]['price']) + str(runner['ex']['availableToBack'][0]['size'])
-                    print 'Available to lay price :' + str(runner['ex']['availableToLay'][0]['price']) + str(runner['ex']['availableToBack'][0]['size'])
-                else:
-                    print 'This runner is not active'
+getOdds('Soccer')
