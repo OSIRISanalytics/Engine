@@ -8,8 +8,8 @@ def archiveOdds(Sport, Agency, df):
 	else:
 		table = "odds_betfair"
 
-	con = sqlite3.connect('DB')
-	df.to_sql(table,con,if_exists = "append")
+	con = sqlite3.connect('../Data/osiris.db')
+	df.to_sql(table,con,if_exists = "append", index = False)
 	con.close()
 
 
@@ -18,7 +18,7 @@ def getOdds(Sport, Agency, User = "Tom", Archive = False):
 	import pandas as pd
 	import params
 	import pinnacle
-	import betfair
+	import betfairUDF
 	import rpy2.robjects as robjects
 	from rpy2.robjects import pandas2ri
 
@@ -50,7 +50,7 @@ def getOdds(Sport, Agency, User = "Tom", Archive = False):
 	else:
 
 		# Extract Odds from Betfair API
-		pyDF = betfair.getOdds(Sport,User)
+		pyDF = betfairUDF.getOdds(Sport,User)
 
 		# Same as above
 		if Archive:
@@ -59,9 +59,7 @@ def getOdds(Sport, Agency, User = "Tom", Archive = False):
 			return pyDF 
 
 
-#test = getOdds("Soccer","Pinnacle",)
-
-#print test.dtypes
+tester = getOdds("Soccer","Betfair","Tom", Archive = True)
 
 def placePinnacleBet(LeagueID, Period):
 	print 'test'
