@@ -1,25 +1,17 @@
 # Load Utilities
 import utilities
 import params
-from multiprocessing import Process
 import time
+import pytz
+import datetime
 
-# Test 1 
+# Local Timezone
+local = pytz.timezone ("Australia/Melbourne")
+time =  datetime.datetime.now().replace(tzinfo = local).strftime("%Y-%m-%d %H:%M:%S")
 
-
-# test1 = utilities.getOdds("Soccer","Pinnacle","TB882982", "Stanimal3#")
-# test2 = utilities.getOdds("Soccer","Pinnacle","TB882982", "Stanimal3#")
-
-
-# # Test 2
-if __name__ == '__main__':
-	main_process, child_process = Pipe()
-	pin_request = Process(target = utilities.getOdds, args =("Soccer","Pinnacle","TB882982", "Stanimal3#"))
-	bet_request = Process(target = utilities.getOdds, args =("Soccer","Pinnacle","TB882982", "Stanimal3#"))
-	test1 = p1.start()
-	test2 = p2.start()
-	p1.join()
-	p2.join()
-
-
+# # Loop through and Log odds into the database
+while time < "2016-07-29 20:00:00":
+	time =  datetime.datetime.now().replace(tzinfo = local).strftime("%Y-%m-%d %H:%M:%S")
+	utilities.getOdds("Soccer","Betfair",time,"Tom", Archive = True)
+	utilities.getOdds("Soccer","Pinnacle",time,"Tom", Archive = True)
 

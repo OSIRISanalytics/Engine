@@ -1,6 +1,6 @@
 getOdds = '''
 
-function(sport, user) {
+function(sport, user, input_time) {
 
 	require(pinnacle.API)
 	require(plyr)
@@ -39,7 +39,7 @@ function(sport, user) {
 	                                     ifelse(Key=="moneyline.home",1, ifelse(Key=="moneyline.away",-1,0))),
 	               Market_Size = ifelse(Market_Type == "moneyline", maxMoneyline,maxSpread),
 	               Market_Odds = convertAmerican(Odds),
-	               StartTime = format(as.POSIXct(strptime(StartTime,"%Y-%m-%dT%H:%M:%SZ", tz = "GMT")),tz = "Australia/Melbourne", usetz = TRUE)) %>%
+	               StartTime = format(as.POSIXct(strptime(StartTime,"%Y-%m-%dT%H:%M:%SZ", tz = "GMT")), tz = "Australia/Melbourne")) %>%
 	        select(-maxSpread, -maxMoneyline,-Odds, -spreads.hdp, -PeriodNumber, -Key) %>%
 	        select(StartTime:AwayTeamName,Market_Type,Market_Value,Market_Odds,Market_Size) %>%
 	        rename(start_time=StartTime,sport_id=SportID,league_id=LeagueID,league_name = LeagueName,
@@ -47,7 +47,7 @@ function(sport, user) {
 
 	names(data) = tolower(names(data))
 	data = data[complete.cases(data),]
-	data = cbind("time" = rep(Sys.time(), nrow(data)), data)
+	data = cbind("log_time" = rep(input_time, nrow(data)), data)
 
 	return(data)
 

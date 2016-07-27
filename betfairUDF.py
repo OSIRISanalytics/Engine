@@ -1,4 +1,4 @@
-def getOdds(Sport,User = "Tom",Market = 'MATCH_ODDS'):
+def getOdds(Sport, User = "Tom",input_time = "Null",Market = 'MATCH_ODDS'):
 
     import pandas as pd
     import login
@@ -96,7 +96,7 @@ def getOdds(Sport,User = "Tom",Market = 'MATCH_ODDS'):
     MarketDf = MarketDf[(MarketDf.market_start_time_dt <= dt_cutoff)]
     
     #Add a logged time
-    MarketDf.loc[:,"log_time"] = datetime.datetime.now().replace(tzinfo = local).strftime("%Y-%m-%d %H:%M:%S")
+    MarketDf.loc[:,"log_time"] = input_time
         
     #Reorder the columns and select
     cols = ["log_time","market_start_time","market_id","market_name","runner_name","price_selection_id","available_to_back_price","available_to_back_market","available_to_lay_price","available_to_lay_market"]
